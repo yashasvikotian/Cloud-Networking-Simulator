@@ -1,0 +1,132 @@
+import random
+import os
+
+class NetworkProfile:
+    def _init_(self, name, latency, bandwidth, reliability):
+        self.name = name
+        self.latency = latency
+        self.bandwidth = bandwidth
+        self.reliability = reliability
+
+    def check_connectivity(self):
+        # Simulate connectivity by randomly returning True or False based on reliability
+        return random.random() < self.reliability                                                                           
+ 
+    def measure_latency(self):
+        # Simulate latency measurement
+        return self.latency + random.uniform(-5, 5)  # adding random jitter of up to 5ms
+
+    def measure_bandwidth(self):
+        # Simulate bandwidth measurement
+        return self.bandwidth + random.uniform(-1, 1)  # adding random variation of up to 1 Mbps
+
+    def set_airplane_mode(self, enable):
+        command = "adb shell settings put global airplane_mode_on {}".format(int(enable))
+        os.system(command)
+        os.system("adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state {}".format(str(enable)))
+
+    def set_network_profile(self, profile):
+        command = "adb shell am start -n com.android.settings/.wifi.WifiStatusTest --es profile {}".format(profile)
+        os.system(command)
+
+    def reset_network_configuration(self):
+        # Placeholder for resetting network configuration
+        pass
+
+# Function to write network inputs to a file
+def write_network_inputs(filename, profiles):
+    with open(filename, 'w') as file:
+        for profile in profiles:
+            file.write(f"{profile.name},{profile.latency},{profile.bandwidth},{profile.reliability}\n")
+
+# Function to read network inputs from a file
+def read_network_inputs(filename):
+    profiles = []
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                name, latency, bandwidth, reliability = line.strip().split(',')
+                profile = NetworkProfile(name, float(latency), float(bandwidth), float(reliability))
+                profiles.append(profile)
+    except FileNotFoundError:
+        print("File not found. No stored profiles.")
+    return profiles
+
+# Function to display all network profiles
+def display_profiles(profiles):
+    print("\nAll Network Profiles:")
+    for idx, profile in enumerate(profiles, 1):
+        print(f"{idx}. Name: {profile.name}, Latency: {profile.latency} ms, Bandwidth: {profile.bandwidth} Mbps, Reliability: {profile.reliability}")
+
+# Creating objects of NetworkProfile with user inputs
+profiles = read_network_inputs("network_profiles.txt")
+
+# Do-while loop for inserting, updating, deleting, and displaying profiles
+while True:
+    print("\nOptions:")
+    print("1. Insert a new profile")
+    print("2. Update a profile")
+    print("3. Delete a profile")
+    print("4. Display all profiles")
+    print("5. Exit")
+
+    choice = input("Enter your choice: ")
+
+    if choice == "1":
+        # Insert a new profile
+        profile_name = input("Enter profile name: ")
+        latency = float(input("Enter latency (in milliseconds): "))
+        bandwidth = float(input("Enter bandwidth (in Mbps): "))
+        reliability = float(input("Enter reliability (a value between 0 and 1): "))
+        profile = NetworkProfile(profile_name, latency, bandwidth, reliability)
+        profiles.append(profile)
+        print("Profile added successfully!")
+
+    elif choice == "2":
+        # Update a profile
+        display_profiles(profiles)
+        index = int(input("Enter the index of the profile to update: ")) - 1
+        if 0 <= index < len(profiles):
+            profile_name = input("Enter new profile name: ")
+            latency = float(input("Enter new latency (in milliseconds): "))
+            bandwidth = float(input("Enter new bandwidth (in Mbps): "))
+            reliability = float(input("Enter new reliability (a value between 0 and 1): "))
+            profiles[index] = NetworkProfile(profile_name, latency, bandwidth, reliability)
+            print("Profile updated successfully!")
+        else:
+            print("Invalid index.")
+
+    elif choice == "3":
+        # Delete a profile
+        display_profiles(profiles)
+        index = int(input("Enter the index of the profile to delete: ")) - 1
+        if 0 <= index < len(profiles):
+            del profiles[index]
+            print("Profile deleted successfully!")
+        else:
+            print("Invalid index.")
+
+    elif choice == "4":
+        # Display all profiles
+        display_profiles(profiles)
+
+    elif choice == "5":
+        # Exit the loop
+        print("Exiting...")
+        break
+
+    else:
+        print("Invalid choice. Please enter a number from 1 to 5.")
+
+# Write network inputs to a file
+write_network_inputs("network_profiles.txt", profiles)# Example usage:
+for profile in profiles:
+    print(f"Profile: {profile.name}")
+    print(f"Connectivity: {'Connected' if profile.check_connectivity() else 'Disconnected'}")
+    print(f"Latency: {profile.measure_latency()} ms")
+    print(f"Bandwidth: {profile.measure_bandwidth()} Mbps")
+    # For demonstration purposes, I'm calling functions with dummy values
+    profile.set_airplane_mode(True)
+    profile.set_network_profile(profile.name)
+    profile.reset_network_configuration()  
+    print()
